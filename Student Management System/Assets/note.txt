@@ -1,0 +1,67 @@
+    def open_dashboard_window(self):
+        self.withdraw()  # Hide the login window
+        # Create and open the dashboard window
+        dashboard_window = StudentManagementSystem()  # Remove the argument
+        dashboard_window.mainloop()
+
+class StudentManagementSystem:
+    def __init__(self):
+        self.app = customtkinter.CTk()
+        self.app.geometry("1350x700+0+0")
+        self.app.title("Student Management System")
+
+        self.create_ui()
+
+    def create_ui(self):
+        # Create main frame (continued)
+        # Button section
+        self.btn_frame = customtkinter.CTkFrame(master=self.detail_frame)
+        self.btn_frame.grid(row=7, columnspan=2, padx=18, pady=10)
+
+        self.add_btn = customtkinter.CTkButton(master=self.btn_frame, text="Add", font=("Arial", 16))
+        self.add_btn.pack(side="left", padx=2, pady=10)
+
+        self.update_btn = customtkinter.CTkButton(master=self.btn_frame, text="Update", font=("Arial", 16))
+        self.update_btn.pack(side="left", padx=10, pady=10)
+
+        self.delete_btn = customtkinter.CTkButton(master=self.btn_frame, text="Delete", font=("Arial", 16))
+        self.delete_btn.pack(side="left", padx=2, pady=10)
+
+        self.clear_btn = customtkinter.CTkButton(master=self.btn_frame, text="Clear", font=("Arial", 16))
+        self.clear_btn.pack(side="left", padx=10, pady=10)
+
+        # Create search frame
+        self.search_frame = customtkinter.CTkFrame(master=self.main_frame)
+        self.search_frame.pack(padx=20, pady=20)
+
+        self.search_label = customtkinter.CTkLabel(master=self.search_frame, text="Search ", font=("Arial", 16))
+        self.search_label.grid(row=0, column=0, padx=12, pady=2)
+
+        self.search_combo = customtkinter.CTkComboBox(master=self.search_frame, values=("Name", "Role no", "Email", "Gender", "Mobile No", "D.O.B", "Address"), font=("Arial", 16))
+        self.search_combo.grid(row=0, column=1, padx=12, pady=2)
+
+        self.search_btn = customtkinter.CTkButton(master=self.search_frame, text="Search", font=("Arial", 16))
+        self.search_btn.grid(row=0, column=2, padx=12, pady=2)
+
+        self.show_all_btn = customtkinter.CTkButton(master=self.search_frame, text="Show All", font=("Arial", 16))
+        self.show_all_btn.grid(row=0, column=3, padx=12, pady=2)
+
+        # Create student data table frame
+        self.data_frame = customtkinter.CTkFrame(master=self.main_frame)
+        self.data_frame.pack(fill="both", expand=True)
+
+        self.student_table = customtkinter.CTkTreeview(master=self.data_frame, columns=("Roll No.", "Name", "Email", "Gender", "Mobile No.", "D.O.B", "Address"), show="headings")
+        self.student_table.heading("Roll No.", text="Roll No.")
+        self.student_table.heading("Name", text="Name")
+        self.student_table.heading("Email", text="Email")
+        self.student_table.heading("Gender", text="Gender")
+        self.student_table.heading("Mobile No.", text="Mobile No.")
+        self.student_table.heading("D.O.B", text="D.O.B")
+        self.student_table.heading("Address", text="Address")
+
+        self.student_table.pack(fill="both", expand=True)
+
+        # Scrollbars
+        y_scroll = customtkinter.CTkScrollbar(master=self.data_frame, orient=tkinter.VERTICAL, command=self.student_table.yview)
+        x_scroll = customtkinter.CTkScrollbar(master=self.data_frame, orient=tkinter.HORIZONTAL, command=self.student_table.xview)
+        y_scroll.pack
