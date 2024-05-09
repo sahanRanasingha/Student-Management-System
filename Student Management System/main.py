@@ -58,6 +58,27 @@ class Database:
             return True  # Insertion successful
         except sqlite3.Error as e:
             return False  # Insertion failed
+    
+    def update_student_details(self, student_id, registration_number, first_name, last_name, email, gender, phone_number, date_of_birth, address):
+        try:
+            self.cursor.execute('''UPDATE students
+                                    SET registration_number=?, first_name=?, last_name=?, email=?, gender=?, phone_number=?, date_of_birth=?, address=?
+                                    WHERE id=?''', (registration_number, first_name, last_name, email, gender, phone_number, date_of_birth, address, student_id))
+            self.connection.commit()
+            return True
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Error occurred: {e}")
+            return False
+    
+    def delete_student(self, student_id):
+        try:
+            self.cursor.execute('''DELETE FROM students
+                                    WHERE id=?''', (student_id,))
+            self.connection.commit()
+            return True
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Error occurred: {e}")
+            return False
 
     def get_user(self, username, password):
         # Hash the password before querying the database
@@ -363,10 +384,10 @@ class StudentManagementSystem(tkinter.Toplevel):
         save_button = customtkinter.CTkButton(master=frame2, text="Save", width=200, cursor="hand2", command=self.student_details)
         save_button.place(x=10, y=450)
 
-        update_button = customtkinter.CTkButton(master=frame2, text="Update", width=200, cursor="hand2")
+        update_button = customtkinter.CTkButton(master=frame2, text="Update", width=200, cursor="hand2", command=self.update_student_details)
         update_button.place(x=220, y=450)
 
-        delete_button = customtkinter.CTkButton(master=frame2, text="Delete", width=200, cursor="hand2")
+        delete_button = customtkinter.CTkButton(master=frame2, text="Delete", width=200, cursor="hand2", command=self.delete_student)
         delete_button.place(x=10, y=500)
 
         clear_button = customtkinter.CTkButton(master=frame2, text="Clear", width=200, cursor="hand2", command=self.clear_fields)
@@ -381,20 +402,23 @@ class StudentManagementSystem(tkinter.Toplevel):
         l5 = customtkinter.CTkLabel(master=frame3, text="Search : ", font=("Arial", 20, "bold"))
         l5.place(x=10, y=100)
 
-        search_option = customtkinter.CTkOptionMenu(master=frame3, values=["First Name","Last Name","Registration Number","Email","Mobile Number","Gender"], width=200)
-        search_option.place(x=110, y=100)
+        self.search_entry = customtkinter.CTkEntry(master=frame3, width=200, placeholder_text="Search Data")
+        self.search_entry.place(x=100, y=100)
 
-        search_button = customtkinter.CTkButton(master=frame3, text="Search", width=150, cursor="hand2")
-        search_button.place(x=350, y=100)
+        self.search_option = customtkinter.CTkOptionMenu(master=frame3, values=["First Name","Last Name","Registration Number","Email","Mobile Number","Gender"], width=150)
+        self.search_option.place(x=310, y=100)
 
-        show_all_button = customtkinter.CTkButton(master=frame3, text="Show All", width=150, cursor="hand2")
-        show_all_button.place(x=525, y=100)
+        search_button = customtkinter.CTkButton(master=frame3, text="Search", width=150, cursor="hand2", command=self.search_student)
+        search_button.place(x=470, y=100)
 
-        update_table_button = customtkinter.CTkButton(master=frame3, text="Update Table", width=150, cursor="hand2", command=self.populate_table)
-        update_table_button.place(x=700, y=100)
+        update_table_button = customtkinter.CTkButton(master=frame3, text="Refresh Table", width=150, cursor="hand2", command=self.populate_table)
+        update_table_button.place(x=630, y=100)
 
         # Create the table to display student details
         self.create_table(frame3)
+
+        # Bind the destroy method to the window's destroy event
+        self.bind("<Destroy>", self.destroy)
 
     def create_table(self,frame3):
         frame4 = customtkinter.CTkFrame(master=frame3, width=850, height=430, corner_radius=15)
@@ -493,6 +517,60 @@ class StudentManagementSystem(tkinter.Toplevel):
                 self.phone_entry.insert(tkinter.END, values[6])
                 self.dateofbirth_entry.insert(tkinter.END, values[7])
                 self.address_entry.insert(tkinter.END, values[8])
+    
+    def update_student_details(self):
+        if self.student_details_table.selection():
+            # Get the ID of the selected student
+            selected_item = self.student_details_table.selection()[0]
+            student_id = self.student_details_table.item(selected_item, "values")[0]
+
+            # Get updated values from entry fields
+            first_name = self.first_name_entry.get()
+            last_name = self.last_name_entry.get()
+            registration_number = self.registration_number_entry.get()
+            email = self.email_entry.get()
+            phone_number = self.phone_entry.get()
+            date_of_birth = self.dateofbirth_entry.get()
+            gender = self.gender_entry.get()
+            address = self.address_entry.get()
+
+            # Check if any of the fields are empty
+            if not first_name or not last_name or not registration_number or not email or not phone_number or not date_of_birth or not gender or not address:
+                messagebox.showerror("Error", "Please fill in all fields")
+                return
+            
+            # Update student data in the database
+            if self.db.update_student_details(student_id, registration_number, first_name, last_name, email, gender, phone_number, date_of_birth, address):
+                messagebox.showinfo("Success", "Data updated successfully!")
+                # Refresh the table to reflect the changes
+                self.populate_table()
+            else:
+                messagebox.showerror("Error", "Failed to update data!")
+        
+        else:
+            messagebox.showerror("Error", "Please select a student to update")
+        
+    def delete_student(self):
+        # Check if a student is selected in the table
+        if not self.student_details_table.selection():
+            messagebox.showerror("Error", "Please select a student to delete")
+            return
+
+        # Get the ID of the selected student
+        selected_item = self.student_details_table.selection()[0]
+        student_id = self.student_details_table.item(selected_item, "values")[0]
+
+        # Confirm deletion with the user
+        confirmation = messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete this student record?")
+
+        if confirmation:
+            # Attempt to delete the student from the database
+            if self.db.delete_student(student_id):
+                messagebox.showinfo("Success", "Student record deleted successfully!")
+                # Refresh the table to reflect the changes
+                self.populate_table()
+            else:
+                messagebox.showerror("Error", "Failed to delete student record!")
 
     def clear_fields(self):
         self.registration_number_entry.delete(0, tkinter.END)
@@ -502,6 +580,51 @@ class StudentManagementSystem(tkinter.Toplevel):
         self.phone_entry.delete(0, tkinter.END)
         self.dateofbirth_entry.delete(0, tkinter.END)
         self.address_entry.delete(0, tkinter.END)
+
+    def search_student(self):
+        search_text = self.search_entry.get()
+        search_option = self.search_option.get()
+
+        # set the database column name
+        if search_option == "First Name":
+            search_option = "first_name"
+        elif search_option == "Last Name":
+            search_option = "last_name"
+        elif search_option == "Registration Number":
+            search_option = "registration_number"
+        elif search_option == "Email":
+            search_option = "email"
+        elif search_option == "Mobile Number":
+            search_option = "phone_number"
+        elif search_option == "Gender":
+            search_option = "gennder"
+
+        # Check if the search query is empty
+        if not search_text:
+            messagebox.showerror("Error", "Please enter a search query")
+            return
+
+        try:
+            # Fetch data from the database
+            query = f'SELECT * FROM students WHERE `{search_option}`=?'
+            self.db.cursor.execute(query, (search_text,))
+            data = self.db.cursor.fetchall()
+
+            # Clear existing data from the table
+            for row in self.student_details_table.get_children():
+                self.student_details_table.delete(row)
+
+            # Populate the table with the fetched data
+            for row in data:
+                self.student_details_table.insert("", "end", values=row)
+        except Exception as e:
+            print("Error:", e)
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def destroy(self, event=None):
+        # Close the database connection when the window is destroyed
+        self.db.connection.close()
+        self.quit()
 
 if __name__ == "__main__":
     db = Database("student_details.db")  # Connect to the database
